@@ -18,7 +18,6 @@ trigger:
 jobs:
 - job: Tests
   strategy:
-    maxParallel: 1
     matrix:
       UBUNTU_NODE8:
         IMAGE_TYPE: 'ubuntu-latest'
