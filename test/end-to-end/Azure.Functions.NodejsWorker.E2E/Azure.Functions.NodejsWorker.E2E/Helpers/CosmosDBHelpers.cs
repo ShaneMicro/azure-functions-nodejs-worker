@@ -61,7 +61,7 @@ namespace Azure.Functions.NodeJs.Tests.E2E
                 {
                     Console.WriteLine("Error code: " + ex.Error.Code);
                     Console.WriteLine("Error message: " + ex.Error.Message);
-                    if (ex.Error.Code == "NotFound") {
+                    if (ex.Error.Code == "NotFound" || ex.Error.Code == "Not Found") {
                         return false;
                     } else {
                         throw ex;
