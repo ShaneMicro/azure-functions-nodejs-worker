@@ -30,14 +30,14 @@ namespace Azure.Functions.NodeJs.Tests.E2E
         }
 
         // keep
-        public async static Task CreateDocument(string docId)
+        public async static Task<Document> CreateDocument(string docId)
         {
             Document documentToTest = new Document()
             {
                 Id = docId
             };
 
-            Document insertedDoc = await _docDbClient.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName), documentToTest);
+            return await _docDbClient.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName), documentToTest);
         }
 
         public async static Task CreateDocument(TestDocument testDocument)

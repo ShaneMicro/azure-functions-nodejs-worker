@@ -26,8 +26,10 @@ namespace Azure.Functions.NodeJs.Tests.E2E
                 //Setup
                 await CosmosDBHelpers.CreateDocumentCollections();
 
+                Console.WriteLine("Creating doc with id: " + expectedDocId);
                 //Trigger            
-                await CosmosDBHelpers.CreateDocument(expectedDocId);
+                var doc = await CosmosDBHelpers.CreateDocument(expectedDocId);
+                Console.WriteLine("Created doc with id: " + doc.Id);
 
                 //Read
                 var documentId = await CosmosDBHelpers.ReadDocument(expectedDocId);
