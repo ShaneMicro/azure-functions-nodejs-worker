@@ -4,6 +4,7 @@
 using Microsoft.Azure.EventHubs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -52,6 +53,48 @@ namespace Azure.Functions.NodeJs.Tests.E2E
             builder.EntityPath = evenHubName;
             EventHubClient eventHubClient = EventHubClient.CreateFromConnectionString(builder.ToString());
             await eventHubClient.SendAsync(events);
+        }
+
+        /// <summary>
+        /// Note: Creating event hubs has to be done at the ARM level which would require a service principal, so for now we'll just verify they exist and tell people to create them manually.
+        /// This is unlike creating a Cosmos DB container, which can be done at the data-plane level with just a connection string
+        /// </summary>
+        public async static Task VerifyEventHubsExist()
+        {
+            EventHubsConnectionStringBuilder builder = new EventHubsConnectionStringBuilder(Constants.EventHubs.EventHubsConnectionStringSetting);
+
+            var hubPrefixes = new string[]{
+                Constants.EventHubs.Cardinality_One_Test.InputPrefix,
+                Constants.EventHubs.Cardinality_One_Test.OutputPrefix,
+                Constants.EventHubs.Json_Test.InputPrefix,
+                Constants.EventHubs.Json_Test.OutputPrefix,
+                Constants.EventHubs.String_Test.InputPrefix,
+                Constants.EventHubs.String_Test.OutputPrefix,
+            };
+
+            var missingHubs = new List<string>();
+            foreach (var hubPrefix in hubPrefixes)
+            {
+                builder.EntityPath = AzureHelpers.GetNameWithSuffix(hubPrefix);
+                EventHubClient eventHubClient = eventHubClient = EventHubClient.CreateFromConnectionString(builder.ToString());
+                try
+                {
+                    await eventHubClient.GetRuntimeInformationAsync();
+                }
+                catch
+                {
+                    missingHubs.Add(builder.EntityPath);
+                }
+                finally
+                {
+                    await eventHubClient.CloseAsync();
+                }
+            }
+
+            if (missingHubs.Count > 0)
+            {
+                throw new Exception($"You must create the following event hubs before running e2e tests: \"{String.Join("\", \"", missingHubs)}\"");
+            }
         }
     }
 }

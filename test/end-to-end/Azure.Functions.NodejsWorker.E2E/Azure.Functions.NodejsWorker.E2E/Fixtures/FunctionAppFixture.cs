@@ -2,11 +2,12 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Azure.Functions.NodeJs.Tests.E2E
 {
-    public class FunctionAppFixture : IDisposable
+    public class FunctionAppFixture : IDisposable, IAsyncLifetime
     {
         private readonly ILogger _logger;
         private bool _disposed;
@@ -19,22 +20,6 @@ namespace Azure.Functions.NodeJs.Tests.E2E
             ILoggerFactory loggerFactory = new LoggerFactory().AddConsole();
 #pragma warning restore CS0618 // Type or member is obsolete
             _logger = loggerFactory.CreateLogger<FunctionAppFixture>();
-
-            // start host via CLI if testing locally
-            if (Constants.FunctionsHostUrl.Contains("localhost"))
-            {
-                // kill existing func processes
-                _logger.LogInformation("Shutting down any running functions hosts..");
-                FixtureHelpers.KillExistingFuncHosts();
-
-                // start functions process
-                _logger.LogInformation($"Starting functions host for {Constants.FunctionAppCollectionName}..");
-                _funcProcess = FixtureHelpers.GetFuncHostProcess();
-
-                FixtureHelpers.StartProcessWithLogging(_funcProcess);
-
-                Thread.Sleep(TimeSpan.FromSeconds(30));
-            }
         }
 
         protected virtual void Dispose(bool disposing)
@@ -60,6 +45,35 @@ namespace Azure.Functions.NodeJs.Tests.E2E
         public void Dispose()
         {
             Dispose(true);
+        }
+
+        public async Task InitializeAsync()
+        {
+            await EventHubsHelpers.VerifyEventHubsExist();
+            await CosmosDBHelpers.CreateDocumentCollections();
+
+            // start host via CLI if testing locally
+            if (Constants.FunctionsHostUrl.Contains("localhost"))
+            {
+                // kill existing func processes
+                _logger.LogInformation("Shutting down any running functions hosts..");
+                FixtureHelpers.KillExistingFuncHosts();
+
+                await FixtureHelpers.SetResourceSuffixInTestFunctionApp(_logger);
+
+                // start functions process
+                _logger.LogInformation($"Starting functions host for {Constants.FunctionAppCollectionName}..");
+                _funcProcess = FixtureHelpers.GetFuncHostProcess();
+
+                FixtureHelpers.StartProcessWithLogging(_funcProcess);
+
+                Thread.Sleep(TimeSpan.FromSeconds(30));
+            }
+        }
+
+        public Task DisposeAsync()
+        {
+            return Task.CompletedTask;
         }
     }
 

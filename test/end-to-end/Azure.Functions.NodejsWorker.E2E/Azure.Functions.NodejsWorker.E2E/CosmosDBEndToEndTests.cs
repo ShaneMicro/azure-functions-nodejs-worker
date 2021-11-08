@@ -25,7 +25,7 @@ namespace Azure.Functions.NodeJs.Tests.E2E
             {
                 //Setup
                 await CosmosDBHelpers.CreateDocumentCollections();
-
+                
                 //Trigger            
                 await CosmosDBHelpers.CreateDocument(expectedDocId);
 

@@ -92,6 +92,7 @@ jobs:
       FUNCTIONS_WORKER_RUNTIME: 'node'
       languageWorkers:node:workerDirectory: $(System.DefaultWorkingDirectory)
       nodeVersion: $(NODE_VERSION)
+      E2EResourceSuffix: $(Agent.JobName)
   - task: PublishTestResults@2
     displayName: 'Publish E2E Test Results'
     condition: always()

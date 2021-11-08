@@ -8,7 +8,7 @@ using Xunit;
 namespace Azure.Functions.NodeJs.Tests.E2E
 {
     [Collection(Constants.FunctionAppCollectionName)]
-    public class StorageEndToEndTests 
+    public class StorageEndToEndTests
     {
         private FunctionAppFixture _fixture;
 
@@ -21,16 +21,19 @@ namespace Azure.Functions.NodeJs.Tests.E2E
         public async Task QueueTriggerAndOutput_Succeeds()
         {
             string expectedQueueMessage = Guid.NewGuid().ToString();
+            var outputQueueName = AzureHelpers.GetNameWithSuffix(Constants.Queue.OutputBindingPrefix);
+            var inputQueueName = AzureHelpers.GetNameWithSuffix(Constants.Queue.InputBindingPrefix);
+
             //Clear queue
-            await StorageHelpers.ClearQueue(Constants.Queue.OutputBindingName);
-            await StorageHelpers.ClearQueue(Constants.Queue.InputBindingName);
+            await StorageHelpers.ClearQueue(outputQueueName);
+            await StorageHelpers.ClearQueue(inputQueueName);
 
             //Set up and trigger            
-            await StorageHelpers.CreateQueue(Constants.Queue.OutputBindingName);
-            await StorageHelpers.InsertIntoQueue(Constants.Queue.InputBindingName, expectedQueueMessage);
-            
+            await StorageHelpers.CreateQueue(outputQueueName);
+            await StorageHelpers.InsertIntoQueue(inputQueueName, expectedQueueMessage);
+
             //Verify
-            var queueMessage = await StorageHelpers.ReadFromQueue(Constants.Queue.OutputBindingName);
+            var queueMessage = await StorageHelpers.ReadFromQueue(outputQueueName);
             Assert.Equal(expectedQueueMessage, queueMessage);
         }
     }

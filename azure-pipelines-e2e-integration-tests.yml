@@ -44,6 +44,7 @@ steps:
       AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
       FUNCTIONS_WORKER_RUNTIME: 'node'
       nodeVersion: $(NODE_VERSION)
+      E2EResourceSuffix: $(Agent.JobName)
   - task: PublishTestResults@2
     condition: always()
     inputs:

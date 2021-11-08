@@ -17,8 +17,10 @@ namespace Azure.Functions.NodeJs.Tests.E2E
     public static class CosmosDBHelpers
     {
         private static DocumentClient _docDbClient;
-        private static Uri inputCollectionsUri = UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName);
-        private static Uri outputCollectionsUri = UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName);
+        private static string inputCollectionName = AzureHelpers.GetNameWithSuffix(Constants.CosmosDB.InputCollectionPrefix);
+        private static string outputCollectionName = AzureHelpers.GetNameWithSuffix(Constants.CosmosDB.OutputCollectionPrefix);
+        private static Uri inputCollectionsUri = UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, inputCollectionName);
+        private static Uri outputCollectionsUri = UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, outputCollectionName);
         private static Uri leasesCollectionsUri = UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, Constants.CosmosDB.LeaseCollectionName);
 
         static CosmosDBHelpers()
@@ -37,18 +39,18 @@ namespace Azure.Functions.NodeJs.Tests.E2E
                 Id = docId
             };
 
-            Document insertedDoc = await _docDbClient.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName), documentToTest);
+            Document insertedDoc = await _docDbClient.CreateDocumentAsync(inputCollectionsUri, documentToTest);
         }
 
         public async static Task CreateDocument(TestDocument testDocument)
         {
-            Document insertedDoc = await _docDbClient.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName), testDocument);
+            Document insertedDoc = await _docDbClient.CreateDocumentAsync(inputCollectionsUri, testDocument);
         }
 
         // keep
         public async static Task<string> ReadDocument(string docId)
         {
-            var docUri = UriFactory.CreateDocumentUri(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName, docId);
+            var docUri = UriFactory.CreateDocumentUri(Constants.CosmosDB.DbName, outputCollectionName, docId);
             Document retrievedDocument = null;
             await Utilities.RetryAsync(async () =>
             {
@@ -68,9 +70,9 @@ namespace Azure.Functions.NodeJs.Tests.E2E
         // keep
         public async static Task DeleteTestDocuments(string docId)
         {
-            var inputDocUri = UriFactory.CreateDocumentUri(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName, docId);
+            var inputDocUri = UriFactory.CreateDocumentUri(Constants.CosmosDB.DbName, inputCollectionName, docId);
             await DeleteDocument(inputDocUri);
-            var outputDocUri = UriFactory.CreateDocumentUri(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName, docId);
+            var outputDocUri = UriFactory.CreateDocumentUri(Constants.CosmosDB.DbName, outputCollectionName, docId);
             await DeleteDocument(outputDocUri);
         }
 
@@ -92,11 +94,11 @@ namespace Azure.Functions.NodeJs.Tests.E2E
             Database db = await _docDbClient.CreateDatabaseIfNotExistsAsync(new Database { Id = Constants.CosmosDB.DbName });
             Uri dbUri = UriFactory.CreateDatabaseUri(db.Id);
 
-            await CreateCollection(dbUri, Constants.CosmosDB.InputCollectionName);
-            await CreateCollection(dbUri, Constants.CosmosDB.OutputCollectionName);
+            await CreateCollection(dbUri, inputCollectionName);
+            await CreateCollection(dbUri, outputCollectionName);
             await CreateCollection(dbUri, Constants.CosmosDB.LeaseCollectionName);
-
         }
+
         public async static Task DeleteDocumentCollections()
         {
             await DeleteCollection(inputCollectionsUri);
@@ -119,6 +121,8 @@ namespace Azure.Functions.NodeJs.Tests.E2E
         private async static Task CreateCollection(Uri dbUri, string collectioName)
         {
             DocumentCollection collection = new DocumentCollection() { Id = collectioName };
+            collection.PartitionKey.Paths.Add("/id");
+            collection.DefaultTimeToLive = 60 * 60 * 24; // expire in 1 day
             await _docDbClient.CreateDocumentCollectionIfNotExistsAsync(dbUri, collection,
                 new RequestOptions()
                 {
