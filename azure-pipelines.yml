@@ -77,6 +77,10 @@ jobs:
       testResultsFiles: 'test/unit-test-results.xml'
       testRunTitle: 'Unit $(Agent.JobName)'
     condition: succeededOrFailed()
+  - task: UseDotNet@2
+    displayName: 'Use .NET sdk 6.0.x for e2e tests'
+    inputs:
+      version: 6.0.x
   - pwsh: |
       .\setup-e2e-tests.ps1
     displayName: 'Setup e2e tests'
