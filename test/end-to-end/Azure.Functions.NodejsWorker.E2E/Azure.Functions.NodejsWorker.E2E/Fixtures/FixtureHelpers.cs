@@ -41,7 +41,7 @@ namespace Azure.Functions.NodeJs.Tests.E2E
                 if (File.Exists(funcJsonPath))
                 {
                     var originalText = await File.ReadAllTextAsync(funcJsonPath);
-                    var newText = originalText.Replace("$E2EResourceSuffix$", AzureHelpers.GetE2EResourceSuffix());
+                    var newText = originalText.Replace("$E2EResourceSuffix$", AzureHelpers.E2EResourceSuffix);
                     if (!originalText.Equals(newText))
                     {
                         logger.LogInformation($"Replacing $E2EResourceSuffix$ in {funcJsonPath}");
