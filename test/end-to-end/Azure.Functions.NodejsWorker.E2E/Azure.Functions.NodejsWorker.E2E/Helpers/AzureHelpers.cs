@@ -24,7 +24,7 @@ namespace Azure.Functions.NodeJs.Tests.E2E
             }
 
             // santize the string a bit to make it more friendly to Azure naming rules
-            return Regex.Replace(result.Trim().ToLower(), @"[^a-z-]", "-");
+            return Regex.Replace(result.Trim().ToLower(), @"[^a-z0-9-]", "-");
         }
     }
 }
