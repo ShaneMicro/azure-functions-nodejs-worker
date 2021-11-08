@@ -4,7 +4,7 @@
       "type": "eventHubTrigger",
       "name": "eventHubMessages",
       "direction": "in",
-      "eventHubName": "test-output-object-node",
+      "eventHubName": "test-output-object-$E2EResourceSuffix$",
       "connection": "AzureWebJobsEventHubSender",
       "cardinality": "one"
     },
@@ -12,7 +12,7 @@
       "type": "queue",
       "name": "$return",
       "direction": "out",
-      "queueName": "test-output-object-node",
+      "queueName": "test-output-object-$E2EResourceSuffix$",
       "connection": "AzureWebJobsStorage"
     }
   ]

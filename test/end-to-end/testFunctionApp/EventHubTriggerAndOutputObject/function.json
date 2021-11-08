@@ -4,14 +4,14 @@
       "type": "eventHubTrigger",
       "name": "eventHubMessages",
       "direction": "in",
-      "eventHubName": "test-input-object-node",
+      "eventHubName": "test-input-object-$E2EResourceSuffix$",
       "connection": "AzureWebJobsEventHubSender",
       "cardinality": "many"
     },
     {
       "type": "eventHub",
       "name": "$return",
-      "eventHubName": "test-output-object-node",
+      "eventHubName": "test-output-object-$E2EResourceSuffix$",
       "connection": "AzureWebJobsEventHubSender",
       "direction": "out"
     }

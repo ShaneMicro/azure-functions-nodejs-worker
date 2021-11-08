@@ -4,7 +4,7 @@
       "type": "eventHubTrigger",
       "name": "eventHubMessages",
       "direction": "in",
-      "eventHubName": "test-input-string-node",
+      "eventHubName": "test-input-string-$E2EResourceSuffix$",
       "connection": "AzureWebJobsEventHubSender",
       "cardinality": "many",
       "dataType": "string"
@@ -12,7 +12,7 @@
     {
       "type": "eventHub",
       "name": "$return",
-      "eventHubName": "test-output-string-node",
+      "eventHubName": "test-output-string-$E2EResourceSuffix$",
       "connection": "AzureWebJobsEventHubSender",
       "direction": "out"
     }

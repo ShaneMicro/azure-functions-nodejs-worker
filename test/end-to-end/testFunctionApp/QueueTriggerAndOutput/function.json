@@ -4,14 +4,14 @@
       "name": "myQueueItem",
       "type": "queueTrigger",
       "direction": "in",
-      "queueName": "test-input-node",
+      "queueName": "test-input-$E2EResourceSuffix$",
       "connection": "AzureWebJobsStorage"
     },
     {
       "name": "$return",
       "type": "queue",
       "direction": "out",
-      "queueName": "test-output-node",
+      "queueName": "test-output-$E2EResourceSuffix$",
       "connection": "AzureWebJobsStorage"      
     }
   ]
