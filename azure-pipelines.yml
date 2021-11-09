@@ -16,8 +16,9 @@ trigger:
 - v2.x
 
 jobs:
-- job: UnitTests
+- job: Tests
   strategy:
+    maxParallel: 1
     matrix:
       UBUNTU_NODE8:
         IMAGE_TYPE: 'ubuntu-latest'
@@ -61,7 +62,7 @@ jobs:
   - task: NodeTool@0
     inputs:
       versionSpec: $(NODE_VERSION)
-    displayName: 'Install Node.js for test'
+    displayName: 'Install Node.js'
   - script: npm ci
     displayName: 'npm ci'
   - script: npm run build
@@ -70,41 +71,23 @@ jobs:
     condition: not(eq(variables['NODE_VERSION'], variables['NODE_8'])) # eslint doesn't support Node 8
     displayName: 'npm run lint'
   - script: npm test
-    displayName: 'npm test'
+    displayName: 'Run unit tests'
   - task: PublishTestResults@2
     displayName: 'Publish Unit Test Results'
     inputs:
       testResultsFiles: 'test/unit-test-results.xml'
       testRunTitle: 'Unit $(Agent.JobName)'
     condition: succeededOrFailed()
-
-- job: E2ETests
-  strategy:
-    maxParallel: 1
-    matrix:
-      NODE10:
-        NODE_VERSION: $(NODE_10)
-      NODE12:
-        NODE_VERSION: $(NODE_12)
-      NODE14:
-        NODE_VERSION: $(NODE_14)
-  pool:
-    vmImage: 'windows-latest'
-  steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: $(NODE_VERSION)
-    displayName: 'Install Node.js for test'
-  - script: npm ci
-    displayName: 'npm ci'
-  - script: npm run build
-    displayName: 'npm run build'
   - pwsh: |
       .\setup-e2e-tests.ps1
-    displayName: 'setup tests'
+    displayName: 'Setup e2e tests'
+    # Node 8 is only supported in v2 compat mode and Mac isn't worth the extra build time unless we can get better parallel job support
+    condition: not(or(eq(variables['NODE_VERSION'], variables['NODE_8']), eq(variables['Agent.OS'], variables['Darwin'])))
   - powershell: |
       .\run-e2e-tests.ps1
-    displayName: 'run tests'
+    displayName: 'Run e2e tests'
+    # Node 8 is only supported in v2 compat mode and Mac isn't worth the extra build time unless we can get better parallel job support
+    condition: not(or(eq(variables['NODE_VERSION'], variables['NODE_8']), eq(variables['Agent.OS'], variables['Darwin'])))
     env:
       AzureWebJobsStorage: $(AzureWebJobsStorage)
       AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
@@ -119,7 +102,6 @@ jobs:
       testRunner: VSTest
       testResultsFiles: '**/*.trx'
       testRunTitle: 'E2E $(Agent.JobName)'
-      failTaskOnFailedTests: true
 
 - job: BuildArtifacts  
   pool:
@@ -128,7 +110,7 @@ jobs:
   - task: NodeTool@0
     inputs:
       versionSpec: $(NODE_10)
-    displayName: 'Install Node.js for test'
+    displayName: 'Install Node.js'
   - script: npm ci
     displayName: 'npm ci'
   - script: npm run build-nomaps
