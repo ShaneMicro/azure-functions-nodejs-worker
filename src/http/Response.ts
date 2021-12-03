@@ -24,18 +24,18 @@ export class Response implements IResponse {
     enableContentNegotiation?: boolean;
     [key: string]: any;
 
-    private _done: Function;
+    #done: Function;
 
     constructor(done: Function) {
-        this._done = done;
+        this.#done = done;
     }
 
     end(body?: any) {
         if (body !== undefined) {
             this.body = body;
         }
-        this.setContentType();
-        this._done();
+        this.#setContentType();
+        this.#done();
         return this;
     }
 
@@ -78,7 +78,7 @@ export class Response implements IResponse {
     set = this.setHeader;
     get = this.getHeader;
 
-    private setContentType() {
+    #setContentType() {
         if (this.body !== undefined) {
             if (this.get('content-type')) {
                 // use user defined content type, if exists

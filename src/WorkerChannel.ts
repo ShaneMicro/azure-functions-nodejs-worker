@@ -39,18 +39,18 @@ interface IWorkerChannel {
  * Initializes handlers for incoming gRPC messages on the client
  */
 export class WorkerChannel implements IWorkerChannel {
-    private _eventStream: IEventStream;
-    private _functionLoader: IFunctionLoader;
-    private _workerId: string;
-    private _invocationRequestBefore: InvocationRequestBefore[];
-    private _invocationRequestAfter: InvocationRequestAfter[];
+    #eventStream: IEventStream;
+    #functionLoader: IFunctionLoader;
+    #workerId: string;
+    #invocationRequestBefore: InvocationRequestBefore[];
+    #invocationRequestAfter: InvocationRequestAfter[];
 
     constructor(workerId: string, eventStream: IEventStream, functionLoader: IFunctionLoader) {
-        this._workerId = workerId;
-        this._eventStream = eventStream;
-        this._functionLoader = functionLoader;
-        this._invocationRequestBefore = [];
-        this._invocationRequestAfter = [];
+        this.#workerId = workerId;
+        this.#eventStream = eventStream;
+        this.#functionLoader = functionLoader;
+        this.#invocationRequestBefore = [];
+        this.#invocationRequestAfter = [];
 
         // call the method with the matching 'event' name on this class, passing the requestId and event message
         eventStream.on('data', (msg) => {
@@ -59,7 +59,7 @@ export class WorkerChannel implements IWorkerChannel {
             if (eventHandler) {
                 eventHandler.apply(this, [msg.requestId, msg[event]]);
             } else {
-                this.log({
+                this.#log({
                     message: `Worker ${workerId} had no handler for message '${event}'`,
                     level: LogLevel.Error,
                     logCategory: LogCategory.System,
@@ -88,8 +88,8 @@ export class WorkerChannel implements IWorkerChannel {
      * @param requestId gRPC message request id
      * @param msg gRPC message content
      */
-    private log(log: rpc.IRpcLog) {
-        this._eventStream.write({
+    #log(log: rpc.IRpcLog) {
+        this.#eventStream.write({
             rpcLog: log,
         });
     }
@@ -98,15 +98,15 @@ export class WorkerChannel implements IWorkerChannel {
      * Register a patching function to be run before User Function is executed.
      * Hook should return a patched version of User Function.
      */
-    public registerBeforeInvocationRequest(beforeCb: InvocationRequestBefore): void {
-        this._invocationRequestBefore.push(beforeCb);
+    registerBeforeInvocationRequest(beforeCb: InvocationRequestBefore): void {
+        this.#invocationRequestBefore.push(beforeCb);
     }
 
     /**
      * Register a function to be run after User Function resolves.
      */
-    public registerAfterInvocationRequest(afterCb: InvocationRequestAfter): void {
-        this._invocationRequestAfter.push(afterCb);
+    registerAfterInvocationRequest(afterCb: InvocationRequestAfter): void {
+        this.#invocationRequestAfter.push(afterCb);
     }
 
     /**
@@ -114,7 +114,7 @@ export class WorkerChannel implements IWorkerChannel {
      * @param requestId gRPC message request id
      * @param msg gRPC message content
      */
-    public workerInitRequest(requestId: string, msg: rpc.WorkerInitRequest) {
+    workerInitRequest(requestId: string, msg: rpc.WorkerInitRequest) {
         // Validate version
         const version = process.version;
         if (!(version.startsWith('v14.') || version.startsWith('v16.'))) {
@@ -138,10 +138,10 @@ export class WorkerChannel implements IWorkerChannel {
             TypedDataCollection: 'true',
         };
 
-        this._eventStream.write({
+        this.#eventStream.write({
             requestId: requestId,
             workerInitResponse: {
-                result: this.getStatus(),
+                result: this.#getStatus(),
                 capabilities: workerCapabilities,
             },
         });
@@ -152,14 +152,14 @@ export class WorkerChannel implements IWorkerChannel {
      * @param requestId gRPC message request id
      * @param msg gRPC message content
      */
-    public async functionLoadRequest(requestId: string, msg: rpc.FunctionLoadRequest) {
+    async functionLoadRequest(requestId: string, msg: rpc.FunctionLoadRequest) {
         if (msg.functionId && msg.metadata) {
             let err, errorMessage;
             try {
-                await this._functionLoader.load(msg.functionId, msg.metadata);
+                await this.#functionLoader.load(msg.functionId, msg.metadata);
             } catch (exception) {
                 errorMessage = `Worker was unable to load function ${msg.metadata.name}: '${exception}'`;
-                this.log({
+                this.#log({
                     message: errorMessage,
                     level: LogLevel.Error,
                     logCategory: LogCategory.System,
@@ -167,11 +167,11 @@ export class WorkerChannel implements IWorkerChannel {
                 err = exception;
             }
 
-            this._eventStream.write({
+            this.#eventStream.write({
                 requestId: requestId,
                 functionLoadResponse: {
                     functionId: msg.functionId,
-                    result: this.getStatus(err, errorMessage),
+                    result: this.#getStatus(err, errorMessage),
                 },
             });
         }
@@ -182,10 +182,10 @@ export class WorkerChannel implements IWorkerChannel {
      * @param requestId gRPC message request id
      * @param msg gRPC message content
      */
-    public invocationRequest(requestId: string, msg: rpc.InvocationRequest) {
-        const info = this._functionLoader.getInfo(<string>msg.functionId);
+    invocationRequest(requestId: string, msg: rpc.InvocationRequest) {
+        const info = this.#functionLoader.getInfo(<string>msg.functionId);
         const logCallback: LogCallback = (level, category, ...args) => {
-            this.log({
+            this.#log({
                 invocationId: msg.invocationId,
                 category: `${info.name}.Invocation`,
                 message: format.apply(null, <[any, any[]]>args),
@@ -197,7 +197,7 @@ export class WorkerChannel implements IWorkerChannel {
         const resultCallback: ResultCallback = (err, result) => {
             const response: rpc.IInvocationResponse = {
                 invocationId: msg.invocationId,
-                result: this.getStatus(err),
+                result: this.#getStatus(err),
             };
             // explicitly set outputData to empty array to concat later
             response.outputData = [];
@@ -259,20 +259,20 @@ export class WorkerChannel implements IWorkerChannel {
                     }
                 }
             } catch (e) {
-                response.result = this.getStatus(e);
+                response.result = this.#getStatus(e);
             }
-            this._eventStream.write({
+            this.#eventStream.write({
                 requestId: requestId,
                 invocationResponse: response,
             });
 
-            this.runInvocationRequestAfter(context);
+            this.#runInvocationRequestAfter(context);
         };
 
         const { context, inputs } = CreateContextAndInputs(info, msg, logCallback, resultCallback);
-        let userFunction = this._functionLoader.getFunc(<string>msg.functionId);
+        let userFunction = this.#functionLoader.getFunc(<string>msg.functionId);
 
-        userFunction = this.runInvocationRequestBefore(context, userFunction);
+        userFunction = this.#runInvocationRequestBefore(context, userFunction);
 
         // catch user errors from the same async context in the event loop and correlate with invocation
         // throws from asynchronous work (setTimeout, etc) are caught by 'unhandledException' and cannot be correlated with invocation
@@ -296,14 +296,14 @@ export class WorkerChannel implements IWorkerChannel {
     /**
      * Worker sends the host information identifying itself
      */
-    public startStream(requestId: string, msg: rpc.StartStream): void {
+    startStream(requestId: string, msg: rpc.StartStream): void {
         // Not yet implemented
     }
 
     /**
      * Message is empty by design - Will add more fields in future if needed
      */
-    public workerHeartbeat(requestId: string, msg: rpc.WorkerHeartbeat): void {
+    workerHeartbeat(requestId: string, msg: rpc.WorkerHeartbeat): void {
         // Not yet implemented
     }
 
@@ -311,16 +311,16 @@ export class WorkerChannel implements IWorkerChannel {
      * Warning before killing the process after grace_period
      * Worker self terminates ..no response on this
      */
-    public workerTerminate(requestId: string, msg: rpc.WorkerTerminate): void {
+    workerTerminate(requestId: string, msg: rpc.WorkerTerminate): void {
         // Not yet implemented
     }
 
     /**
      * Worker sends the host empty response to evaluate the worker's latency
      */
-    public workerStatusRequest(requestId: string, msg: rpc.WorkerStatusRequest): void {
+    workerStatusRequest(requestId: string, msg: rpc.WorkerStatusRequest): void {
         const workerStatusResponse: rpc.IWorkerStatusResponse = {};
-        this._eventStream.write({
+        this.#eventStream.write({
             requestId: requestId,
             workerStatusResponse,
         });
@@ -329,24 +329,24 @@ export class WorkerChannel implements IWorkerChannel {
     /**
      * Host notifies worker of file content change
      */
-    public fileChangeEventRequest(requestId: string, msg: rpc.FileChangeEventRequest): void {
+    fileChangeEventRequest(requestId: string, msg: rpc.FileChangeEventRequest): void {
         // Not yet implemented
     }
 
     /**
      * Host requests worker to cancel invocation
      */
-    public invocationCancel(requestId: string, msg: rpc.InvocationCancel): void {
+    invocationCancel(requestId: string, msg: rpc.InvocationCancel): void {
         // Not yet implemented
     }
 
     /**
      * Environment variables from the current process
      */
-    public functionEnvironmentReloadRequest(requestId: string, msg: rpc.IFunctionEnvironmentReloadRequest): void {
+    functionEnvironmentReloadRequest(requestId: string, msg: rpc.IFunctionEnvironmentReloadRequest): void {
         // Add environment variables from incoming
         const numVariables = (msg.environmentVariables && Object.keys(msg.environmentVariables).length) || 0;
-        this.log({
+        this.#log({
             message: `Reloading environment variables. Found ${numVariables} variables to reload.`,
             level: LogLevel.Information,
             logCategory: LogCategory.System,
@@ -357,7 +357,7 @@ export class WorkerChannel implements IWorkerChannel {
             process.env = Object.assign({}, msg.environmentVariables);
             // Change current working directory
             if (msg.functionAppDirectory) {
-                this.log({
+                this.#log({
                     message: `Changing current working directory to ${msg.functionAppDirectory}`,
                     level: LogLevel.Information,
                     logCategory: LogCategory.System,
@@ -369,16 +369,16 @@ export class WorkerChannel implements IWorkerChannel {
         }
 
         const functionEnvironmentReloadResponse: rpc.IFunctionEnvironmentReloadResponse = {
-            result: this.getStatus(error),
+            result: this.#getStatus(error),
         };
 
-        this._eventStream.write({
+        this.#eventStream.write({
             requestId: requestId,
             functionEnvironmentReloadResponse,
         });
     }
 
-    private getStatus(err?: any, errorMessage?: string): rpc.IStatusResult {
+    #getStatus(err?: any, errorMessage?: string): rpc.IStatusResult {
         const status: rpc.IStatusResult = {
             status: rpc.StatusResult.Status.Success,
         };
@@ -394,16 +394,16 @@ export class WorkerChannel implements IWorkerChannel {
         return status;
     }
 
-    private runInvocationRequestBefore(context: Context, userFunction: Function): Function {
+    #runInvocationRequestBefore(context: Context, userFunction: Function): Function {
         let wrappedFunction = userFunction;
-        for (const before of this._invocationRequestBefore) {
+        for (const before of this.#invocationRequestBefore) {
             wrappedFunction = before(context, wrappedFunction);
         }
         return wrappedFunction;
     }
 
-    private runInvocationRequestAfter(context: Context) {
-        for (const after of this._invocationRequestAfter) {
+    #runInvocationRequestAfter(context: Context) {
+        for (const after of this.#invocationRequestAfter) {
             after(context);
         }
     }

@@ -46,7 +46,12 @@
         "no-empty": "off",
         "no-useless-escape": "off",
         "prefer-rest-params": "off",
-        "prefer-spread": "off"
+        "prefer-spread": "off",
+        "@typescript-eslint/explicit-member-accessibility": [
+            "error", {
+                "accessibility": "no-public"
+            }
+        ]
     },
     "ignorePatterns": [
         "**/*.js",

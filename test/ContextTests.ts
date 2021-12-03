@@ -293,28 +293,28 @@ describe('Context', () => {
 
 // async test functions
 class BasicAsync {
-    public static async asyncAndCallback(context: Context) {
+    static async asyncAndCallback(context: Context) {
         context.done();
     }
 
-    public static async asyncPlainFunction(context: Context) {
+    static async asyncPlainFunction(context: Context) {
         return 'hello';
     }
 }
 
 // sync test functions
 class BasicCallback {
-    public static callbackTwice(context) {
+    static callbackTwice(context) {
         context.done();
         context.done();
     }
 
-    public static callbackOnce(context) {
+    static callbackOnce(context) {
         context.bindings = { hello: 'world' };
         context.done();
     }
 
-    public static callbackNone(context) {}
+    static callbackNone(context) {}
 }
 
 // Does logic in WorkerChannel to call the user function

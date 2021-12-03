@@ -7,16 +7,16 @@ import { fromTypedData } from '../converters/RpcConverters';
 import { fromNullableMapping, fromRpcHttpBody } from '../converters/RpcHttpConverters';
 
 export class Request implements HttpRequest {
-    public method: HttpMethod | null;
-    public url: string;
-    public originalUrl: string;
-    public headers: HttpRequestHeaders;
-    public query: HttpRequestQuery;
-    public params: HttpRequestParams;
-    public body?: any;
-    public rawBody?: any;
+    method: HttpMethod | null;
+    url: string;
+    originalUrl: string;
+    headers: HttpRequestHeaders;
+    query: HttpRequestQuery;
+    params: HttpRequestParams;
+    body?: any;
+    rawBody?: any;
 
-    public constructor(rpcHttp: rpc.IRpcHttp) {
+    constructor(rpcHttp: rpc.IRpcHttp) {
         this.method = <HttpMethod>rpcHttp.method;
         this.url = <string>rpcHttp.url;
         this.originalUrl = <string>rpcHttp.url;
@@ -27,7 +27,7 @@ export class Request implements HttpRequest {
         this.rawBody = fromRpcHttpBody(<rpc.ITypedData>rpcHttp.body);
     }
 
-    public get(field: string): string | undefined {
+    get(field: string): string | undefined {
         return this.headers && this.headers[field.toLowerCase()];
     }
 }
