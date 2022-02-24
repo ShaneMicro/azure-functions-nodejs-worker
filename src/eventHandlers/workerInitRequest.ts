@@ -4,6 +4,7 @@
 import { access, constants } from 'fs';
 import * as path from 'path';
 import { AzureFunctionsRpcMessages as rpc } from '../../azure-functions-language-worker-protobuf/src/rpc';
+import { delay } from '../utils/delay';
 import { InternalException } from '../utils/InternalException';
 import { systemError } from '../utils/Logger';
 import { toRpcStatus } from '../utils/toRpcStatus';
@@ -77,7 +78,7 @@ export function logColdStartWarning(channel: WorkerChannel, delayInMs?: number):
         if (!delayInMs) {
             delayInMs = 5000;
         }
-        setTimeout(() => {
+        void delay(delayInMs).then(() => {
             access(path.join(process.env.AzureWebJobsScriptRoot!, 'package.json'), constants.F_OK, (e) => {
                 if (e) {
                     channel.log({
@@ -88,6 +89,6 @@ export function logColdStartWarning(channel: WorkerChannel, delayInMs?: number):
                     });
                 }
             });
-        }, delayInMs);
+        });
     }
 }
