@@ -381,4 +381,121 @@ declare module '@azure/functions' {
             lastUpdated: string;
         };
     }
+    export module AuthenticationEvents {
+        abstract class IEventRequest<R extends IEventResponse, D extends IEventData>{
+            requestStatus: RequestStatus;
+            statusMessage: string;
+            response: R;
+            payload: D;
+        }
+
+        abstract class IEventResponse {
+            Schema: string;
+            body: string;
+            jsonBody: JSON
+        }
+
+        abstract class IEventData {
+            eventListenerId: string;
+            time: Date;
+            type: string;
+            apiSchemaVersion: string;
+            customExtensionId: string;
+        }
+
+        abstract class IActionableResponse<E extends IEventAction> extends IEventResponse{
+            actions:E[]
+        }
+
+        interface IEventAction{
+            actionType:string
+        }
+
+        export enum RequestStatus {
+            Failed,
+            TokenInvalid,
+            Success
+        }
+
+        export module TokenIssuanceStart {
+            abstract class TokenIssuanceStartAction implements IEventAction{
+                abstract actionType: string;
+
+            }
+            export module preview_10_01_2021 {
+
+                export class OnTokenIssuanceStartRequest extends AuthenticationEvents.IEventRequest<OnTokenIssuanceStartResponse, OnTokenIssuanceStartData>{
+
+                }
+                export class OnTokenIssuanceStartResponse extends AuthenticationEvents.IActionableResponse<TokenIssuanceStartAction> {
+
+                }
+                export class OnTokenIssuanceStartData extends AuthenticationEvents.IEventData {
+                    context:Context
+                }
+
+                export interface Client {
+                    ip: string;
+                }
+
+                export interface AuthProtocol {
+                    type: string;
+                    tenantId: string;
+                }
+
+                export interface ClientServicePrincipal {
+                    id: string;
+                    appId: string;
+                    appDisplayName: string;
+                    displayName: string;
+                    servicePrincipalNames: string[];
+                }
+
+                export interface ResourceServicePrincipal {
+                    id: string;
+                    appId: string;
+                    appDisplayName: string;
+                    displayName: string;
+                    servicePrincipalNames: string[];
+                }
+
+                export interface Role {
+                    id: string;
+                    value: string;
+                }
+
+                export interface User {
+                    ageGroup: string;
+                    companyName: string;
+                    country: string;
+                    createdDateTime: Date;
+                    creationType: string;
+                    department: string;
+                    displayName: string;
+                    givenName: string;
+                    id: string;
+                    lastPasswordChangeDateTime: Date;
+                    mail: string;
+                    onPremisesSamAccountName: string;
+                    onPremisesSecurityIdentifier: string;
+                    onPremiseUserPrincipalName: string;
+                    preferredDataLocation: string;
+                    preferredLanguage: string;
+                    surname: string;
+                    userPrincipalName: string;
+                    userType: string;
+                }
+
+                export interface Context {
+                    correlationId: string;
+                    client: Client;
+                    authProtocol: AuthProtocol;
+                    clientServicePrincipal: ClientServicePrincipal;
+                    resourceServicePrincipal: ResourceServicePrincipal;
+                    roles: Role[];
+                    user: User;
+                }
+            }
+        }
+    }
 }
